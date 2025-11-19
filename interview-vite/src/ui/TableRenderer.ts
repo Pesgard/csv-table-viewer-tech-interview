@@ -21,6 +21,9 @@ export class TableRenderer {
   /** Container element where the table will be rendered */
   private container: HTMLElement;
 
+  /** Element to display selected rows */
+  private selectedRowsDisplay?: HTMLParagraphElement;
+
   /**
    * Creates a new TableRenderer instance.
    *
@@ -66,6 +69,11 @@ export class TableRenderer {
     const thead = document.createElement('thead');
     const tr = document.createElement('tr');
 
+    // Add checkbox header (first column)
+    const checkboxHeader = document.createElement('th');
+    checkboxHeader.textContent = '';
+    tr.appendChild(checkboxHeader);
+
     // Create header cells with click handlers
     headers.forEach((h) => {
       const th = document.createElement('th');
@@ -86,6 +94,13 @@ export class TableRenderer {
     // Add table to container
     this.container.appendChild(table);
     this.table = table;
+
+    // Create paragraph element to display selected rows
+    const selectedRowsDisplay = document.createElement('p');
+    selectedRowsDisplay.id = 'selected-rows-display';
+    selectedRowsDisplay.textContent = 'Rows Selected: none';
+    this.container.appendChild(selectedRowsDisplay);
+    this.selectedRowsDisplay = selectedRowsDisplay;
 
     // Populate table with data
     this.updateBody(rows);
@@ -133,6 +148,14 @@ export class TableRenderer {
     rows.forEach((row) => {
       const tr = document.createElement('tr');
 
+      // Create checkbox cell (first column)
+      const checkboxCell = document.createElement('td');
+      const checkbox = document.createElement('input');
+      checkbox.type = 'checkbox';
+      checkbox.addEventListener('click', () => this.onCheckboxClick(tr));
+      checkboxCell.appendChild(checkbox);
+      tr.appendChild(checkboxCell);
+
       // Create cells in header order
       this.headers.forEach((h) => {
         const td = document.createElement('td');
@@ -143,6 +166,70 @@ export class TableRenderer {
 
       tbody.appendChild(tr);
     });
+  }
+
+  /**
+   * Handles checkbox click events.
+   * Updates the visual state of the row based on selection.
+   *
+   * @param row - The table row element that contains the checkbox
+   */
+  private onCheckboxClick(row: HTMLTableRowElement) {
+    // Get all cells (td elements) in this row
+    const cells = row.getElementsByTagName('td');
+    
+    // Toggle selected class on the row
+    row.classList.toggle('selected');
+    
+    // Update all cells in the row (simple but effective update)
+    Array.from(cells).forEach((cell) => {
+      cell.classList.toggle('selected');
+    });
+
+    // Get selected rows data and update display
+    this.updateSelectedRowsDisplay();
+  }
+
+  /**
+   * Updates the display of selected rows and logs them to console.
+   */
+  private updateSelectedRowsDisplay() {
+    if (!this.table || !this.selectedRowsDisplay) return;
+
+    // Get all selected rows (rows with 'selected' class)
+    const selectedRows = this.table.querySelectorAll('tbody tr.selected');
+    const selectedData: CSVRow[] = [];
+
+    selectedRows.forEach((tr) => {
+      const cells = tr.getElementsByTagName('td');
+      const rowData: CSVRow = {};
+
+      // Skip first cell (checkbox), process rest as data
+      for (let i = 1; i < cells.length; i++) {
+        const header = this.headers[i - 1];
+        const cellValue = cells[i].textContent || '';
+        // Try to parse as number if possible, otherwise keep as string
+        rowData[header] = cellValue === '' ? null : cellValue;
+      }
+
+      selectedData.push(rowData);
+    });
+
+    // Log to console
+    console.log('Rows Selected:', selectedData);
+
+    // Update paragraph display
+    if (selectedData.length === 0) {
+      this.selectedRowsDisplay.textContent = 'Rows Selected: none';
+    } else {
+      const displayText = selectedData
+        .map((row, index) => {
+          const values = Object.values(row).filter((v) => v !== null);
+          return `${index + 1}. ${values.join(' - ')}`;
+        })
+        .join(' | ');
+      this.selectedRowsDisplay.textContent = `Rows Selected: ${displayText}`;
+    }
   }
 
   /**
@@ -178,7 +265,10 @@ export class TableRenderer {
 
     const ths = this.table.querySelectorAll('th');
     ths.forEach((th) => {
-      const col = th.dataset.col!;
+      const col = th.dataset.col;
+      // Skip checkbox header (doesn't have dataset.col)
+      if (!col) return;
+
       const state = this.sortState[col];
 
       // Add 'sorted' class for styled columns

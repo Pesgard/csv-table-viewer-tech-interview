@@ -36,7 +36,14 @@ Esta aplicación permite cargar un archivo CSV, parsearlo de forma tipada, visua
 - ✔ Manejado por la clase `SortManager`
 - ✔ Comparación locale-aware para strings
 
-### ✅ 4. Arquitectura Limpia y Escalable
+### ✅ 4. Row Selection
+
+- ✔ Checkbox in each row for individual selection
+- ✔ Visual feedback with `selected` class applied to row and cells
+- ✔ Real-time display of selected rows in a paragraph below the table
+- ✔ Console logging of selected row data for debugging
+
+### ✅ 5. Arquitectura Limpia y Escalable
 
 El proyecto sigue una separación modular clara:
 
@@ -114,6 +121,34 @@ Se encarga del ordenamiento estable:
 - Indicadores visuales de estado de ordenamiento (`↑` `↓`)
 - Limpieza del DOM antes de re-render
 - Inferencia automática de headers si no se proveen
+- Checkbox column for row selection
+- Visual selection state management
+- Display selected rows below the table
+
+---
+
+## 🔄 Recent Changes
+
+### Row Selection Feature
+
+**What was added:**
+- Checkbox column as the first column in each table row
+- Visual selection state with `selected` CSS class
+- Paragraph element below table showing selected rows
+- Console logging of selected row data
+
+**How it works:**
+1. Each row contains a checkbox in the first cell
+2. Clicking the checkbox toggles the `selected` class on the row and all its cells
+3. `updateSelectedRowsDisplay()` method collects all selected rows and:
+   - Extracts row data (excluding checkbox cell)
+   - Logs selected data to console
+   - Updates the paragraph below the table with selected rows summary
+
+**Implementation details:**
+- Uses `getElementsByTagName('td')` to get all cells in a row
+- Simple toggle mechanism without complex state management
+- Automatically updates display on each checkbox click
 
 ---
 
